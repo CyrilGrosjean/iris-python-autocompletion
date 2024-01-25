@@ -183,8 +183,213 @@ class Page(Base):
         """
         ...
 
-    def EscapeHTML(i: Any) -> str:
+    def EscapeHTML(self, i: Any) -> str:
         """
         This method converts input HTML text into Escaped HTML text.
+        """
+        ...
+
+    def EscapeURL(self, i: str, charset: str) -> str:
+        """
+        This method converts the in input URL string into Escaped URL string. Note that '/' is not escaped which is 
+        consistent with rfc3986. The conversion first encodes the string using the current devices charset and then url 
+        encodes the result. If you pass in charset then we will use this rather than the current devices charset for 
+        the encoding.
+        """
+        ...
+    
+    def HyperEventCall(self, methodName: str, args: str, type: int = 0, mobile: bool = 0) -> str:
+        """
+        This method returns the string that needs to be written to the current device in order to insert a HyperEvent 
+        into a CSP page that is defined via a class. This method is the hand written class equivalent of using 
+        #call(...)#, #server(...)# or #vbserver(...)# in a CSP page.\n
+        The methodName argument defines the method to call in the same format as #server: either 
+        ..method or package.class.method.\n
+        The args argument defines the runtime JavaScript arguments to be passed to the ObjectScript method as a 
+        comma separated string.\n
+        The type argument is 0 if you wish to use a #server(...)# style HyperEvent (this is the default), 1 if you 
+        wish to use a #call(...) style HyperEvent. Note that browsers are deprecating the synchronous #server(...)# 
+        style XMLHttpRequest so application should transition to using type=1. If the argument is 0 then it will use 
+        double quotes for the JavaScript which is the behaviour of #vbserver in a csp page, this will work correctly 
+        in both JavaScript and VBScript but you need to be aware that it will quote its parameter with ".\n
+        In order to use this method, HyperEventHead() must be used in the <head> section.
+        """
+        ...
+
+    def HyperEventHead(self, iframeOnly: bool, strict: bool, optionalBroker: bool) -> str:
+        """
+        This method returns the string that needs to be written to the current device during generation of the <head> 
+        section in order to use HyperEvents. See HyperEventCall() for details. This is not needed if you are using 
+        #server, #vbserver or #call calls from a .csp page as this is automatically inserted, it is only required when 
+        generating the class or the HyperEvent calls directly. The iframeonly argument is now ignored since #call and 
+        #server now both use XMLHttpRequest. However, the iframeonly argument is kept for compatibility. Passing the 
+        argument strict=1 will create strict HTML 4 format of script tag.
+        """
+        ...
+    
+    def Include(self, url: str) -> None:
+        """
+        Include another csp page or file in the output at this point. If the url ends in either 'csp' or 'cls' then 
+        it will call the csp or cls class to generate output skipping the output of the HTML headers. If the url is a 
+        file then it uses the stream server to output this file. This url can be a relative path in which case it will 
+        be resolved based on the current page url first. This is called by the <csp:include Page="page.csp"> tag.\n
+        You can pass additional parameters to the included page by adding them to the url to call. These parameters 
+        will only exist for the included page and the %request object is restored when it returns to the calling page.
+        """
+        ...
+    
+    def InsertHiddenField(self, url: str, name: str, value: str, extra: str = "") -> str:
+        """
+        Inserts a '<input type="hidden" name="Name" value="Value">' tag into the current document. If the target url 
+        you are submitting to (url) is encoded then this will encrypt the data in this hidden link. In this way it is 
+        similar to the Link(). The extra are any extra attributes to add to the tag.
+        """
+        ...
+    
+    def InsertHiddenFields(self, url: str, query: str) -> str:
+        """
+        Return the string containing the hidden form tags. You pass it the url URL of the target page that this form is 
+        submitted to (the action=xxx attribute).\n
+        The array, query, contains an optional set of name-value pairs which are also output as hidden input fields. 
+        This is normally called automatically directly after the <FORM> tag to insert any hidden input tags that are 
+        required. However if you generate a form programatically then you may need to call this function just after you 
+        output the <FORM> tag.
+        """
+        ...
+    
+    def IsPrivate(self) -> bool:
+        """
+        Returns 1 if this page is in fact a private page (see PRIVATE).
+        """
+        ...
+    
+    def Link(self, link: str, query: str, addQ: bool = 0) -> str:
+        """
+        Tranforms the link specified by link into a URL and returns it as a string.\n
+        The URL may be encrypted.\n
+        The array, query, contains an optional set of name-value pairs which are added to the URL. For example 
+        'Set query("name")="data"'\n
+        If the optional argument addQ is true, then a ? or &, as appropriate, is added to end of the URL
+        """
+        ...
+    
+    def OnHTTPHeader(self, OutputBody: bool) -> Status:
+        """
+        Event handler for PAGE event: this is invoked in order to send HTTP headers. The default action is to invoke 
+        the WriteHTTPHeader() of the %CSP.Response which generates HTTP 1.0 standard headers. Set OutputBody to 0 to 
+        prevent prevent OnPage() from being called, leave it unchanged otherwise. Returns a %Status code.
+        """
+        ...
+    
+    def OnPage(self) -> Status:
+        """
+        Event handler for PAGE event: this is invoked in order to generate the content of a csp page.
+        """
+        ...
+    
+    def OnPageError(self, sc: Status) -> Status:
+        """
+        Event handler for any error that occurs on the page. If an error occurs and this method is defined it calls 
+        this method passing it the error code by reference. You may change the error code if wished, if you set it 
+        to $$$OK then it will cancel the error and the CSP error page will not be displayed.
+        """
+        ...
+    
+    def OnPostHTTP(self) -> None:
+        """
+        Event handler for POSTPAGE event: this is invoked after the data for the CSP page has been sent to the browser 
+        from the the InterSystems IRIS server.
+        """
+        ...
+    
+    def OnPostHyperEvent(self, classe: str, method: str) -> Status:
+        """
+        Event handler which is invoked after a hyperevent method is called on this page.
+        """
+        ...
+    
+    def OnPreHTTP(self) -> bool:
+        """
+        Event handler for PreHTTP event: this is invoked before the HTTP headers for a CSP page have been sent. All 
+        changes to the %CSP.Response class, such as adding cookies, HTTP headers, setting the content type etc. must 
+        be made from within the OnPreHTTP() method. Also changes to the state of the CSP application such as changing 
+        %session.EndSession or %session.AppTimeout must be made within the OnPreHTTP() method. It is prefered that 
+        changes to %session.Preserve are also made in the OnPreHTTP() method as this is more efficient, although it is 
+        supported in any section of the page. Return 0 to prevent OnPage() from being called.
+        """
+        ...
+    
+    def OnPreHyperEvent(self, classe: str, method: str) -> Status:
+        """
+        Event handler which is invoked before a hyperevent method is called on this page. This gives you a chance to 
+        modify the behavior of every hyperevent call within this page. Return an error code to prevent the hyperevent 
+        from being called.
+        """
+        ...
+    
+    def Page(self, skipheader: bool = 1) -> Status:
+        """
+        Process a request to serve a CSPPage. This method is invoked by the CSP Server. In turn, this method invokes:\n
+        - OnPreHTTP()\n
+        - OnPage()\n
+        - OnPostHTTP()\n
+        Note that OnPostHTTP() always gets run, even if there was an error.\n
+        skipheader will skip the running of the OnPreHTTP() method.
+        """
+        ...
+    
+    def QuoteJS(self, i: Any) -> str:
+        """
+        This method converts input string into quoted JavaScript literal
+        """
+        ...
+    
+    def RewriteURL(self, url: str) -> str:
+        """
+        This method will rewrite a URL to use #url()# if needed
+        """
+        ...
+    
+    def ShowError(self, sc: Status) -> None:
+        """
+        Display a %Status error code to the CSP Page.
+        """
+        ...
+    
+    def StartTimer(self, name: str) -> None:
+        """
+        Used to get performance information on your CSP pages. This is called to start the timing of a block of code. 
+        The name specifies the type of component we are timing, for example we automatically call this with 'Page' at 
+        the start and end of the rendering of the CSP page. The idea is that you can call this at the start and end of 
+        any block of code to log information on how long this is taking.\n
+        This is a default implementation of what sort of information to log, however you can subclass this and 
+        StopTimer() to enhance the information that is logged.
+        """
+        ...
+    
+    def StopTimer(self, name: str) -> None:
+        """
+        Used to time performance information on your CSP pages. This is called to stop the timing of a block of code. 
+        The name specifies the type of component to time. See StartTimer() for more information on this.
+        """
+        ...
+    
+    def ThrowError(self, sc: Status) -> None:
+        """
+        Passed a %Status code this goes to the error page passing this status code
+        """
+        ...
+    
+    def UnescapeHTML(self, i: Any) -> str:
+        """
+        This method converts Escaped HTML text into normal HTML text
+        """
+        ...
+    
+    def UnescapeURL(self, i: str, charset: str) -> str:
+        """
+        This method converts the in Escaped URL string back to its original form. The conversion first unescapes the 
+        URL then decodes the string using the current devices charset. If you pass in charset then we will use this 
+        rather than the current devices charset for the decoding.
         """
         ...
